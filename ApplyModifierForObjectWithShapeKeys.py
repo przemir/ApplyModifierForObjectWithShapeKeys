@@ -82,7 +82,7 @@ def applyModifierForObjectWithShapeKeys(context, modifierName):
         # time to apply modifiers
         bpy.ops.object.modifier_apply(apply_as='DATA', modifier=modifierName)
 
-    for i in range(0, len(list))[1::]:
+    for i in range(0, len(list))[1:]:
         bpy.ops.object.select_all(action='DESELECT')
         list[i].select = True
         list[0].select = True
@@ -91,7 +91,7 @@ def applyModifierForObjectWithShapeKeys(context, modifierName):
         context.scene.objects.active.data.shape_keys.key_blocks[i].name = list_names[i]
 
     bpy.ops.object.select_all(action='DESELECT')
-    for o in list[1::]:
+    for o in list[1:]:
         o.select = True
     old_object.select = True
 
