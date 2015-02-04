@@ -1,0 +1,2 @@
+# ApplyModifierForObjectWithShapeKeys
+Blender script
