@@ -56,14 +56,12 @@ def applyModifierForObjectWithShapeKeys(context, modifierName):
     if context.object.data.shape_keys:
         list_shapes = [o for o in context.object.data.shape_keys.key_blocks]
     
-    old_object = context.scene.objects.active
-    old_object_name = old_object.name
-    old_object_data_name = old_object.data.name
     if(list_shapes == []):
         bpy.ops.object.modifier_apply(apply_as='DATA', modifier=modifierName)
-        return old_object
+        return context.scene.objects.active
     
-    for i in range(0, len(list_shapes)):
+    list.append(context.scene.objects.active)
+    for i in range(1, len(list_shapes)):
         bpy.ops.object.duplicate_move(OBJECT_OT_duplicate={"linked":False, "mode":'TRANSLATION'}, TRANSFORM_OT_translate={"value":(0, 0, 0), "constraint_axis":(False, False, False), "constraint_orientation":'GLOBAL', "mirror":False, "proportional":'DISABLED', "proportional_edit_falloff":'SMOOTH', "proportional_size":1, "snap":False, "snap_target":'CLOSEST', "snap_point":(0, 0, 0), "snap_align":False, "snap_normal":(0, 0, 0), "texture_space":False, "release_confirm":False})
         list.append(context.scene.objects.active)
 
@@ -81,25 +79,25 @@ def applyModifierForObjectWithShapeKeys(context, modifierName):
         bpy.ops.object.shape_key_remove()
         # time to apply modifiers
         bpy.ops.object.modifier_apply(apply_as='DATA', modifier=modifierName)
-
-    for i in range(0, len(list))[1:]:
-        bpy.ops.object.select_all(action='DESELECT')
+    
+    bpy.ops.object.select_all(action='DESELECT')
+    context.scene.objects.active = list[0]
+    list[0].select = True
+    bpy.ops.object.shape_key_add(from_mix=False)
+    context.scene.objects.active.data.shape_keys.key_blocks[0].name = list_names[0]
+    for i in range(1, len(list)):
         list[i].select = True
-        list[0].select = True
-        context.scene.objects.active = list[0]
         bpy.ops.object.join_shapes()
+        list[i].select = False
         context.scene.objects.active.data.shape_keys.key_blocks[i].name = list_names[i]
-
+    
     bpy.ops.object.select_all(action='DESELECT')
     for o in list[1:]:
         o.select = True
-    old_object.select = True
 
     bpy.ops.object.delete(use_global=False)
     context.scene.objects.active = list[0]
     context.scene.objects.active.select = True
-    context.scene.objects.active.name = old_object_name
-    context.scene.objects.active.data.name = old_object_data_name
     return context.scene.objects.active
 
 class ApplyModifierForObjectWithShapeKeysOperator(bpy.types.Operator):
