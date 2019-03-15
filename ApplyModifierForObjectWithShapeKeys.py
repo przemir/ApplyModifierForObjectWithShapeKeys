@@ -76,6 +76,9 @@ def applyModifierForObjectWithShapeKeys(context, modifierName):
             bpy.ops.object.shape_key_remove()
         # last deleted shape doesn't change object shape
         context.object.active_shape_key_index = 0
+        # for some reason, changing to edit mode and return object mode fix problem with mesh change when deleting last shapekey
+        bpy.ops.object.editmode_toggle()
+        bpy.ops.object.editmode_toggle()
         bpy.ops.object.shape_key_remove()
         # time to apply modifiers
         bpy.ops.object.modifier_apply(apply_as='DATA', modifier=modifierName)
