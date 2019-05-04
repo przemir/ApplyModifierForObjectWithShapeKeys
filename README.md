@@ -6,3 +6,5 @@ Apply modifier and remove from the stack for object with shape keys (Pushing 'Ap
 Installation
 
 It is a plugin. Select "File -> User Preferences" and choose "Addon" tab. Click "Install from file..." and choose downloaded file.
+
+Updated to 2.8
