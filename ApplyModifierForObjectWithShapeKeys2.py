@@ -38,6 +38,7 @@ bl_info = {
 }
 
 import bpy, math
+from bpy.utils import register_class
 from bpy.props import *
 
 # Algorithm:
@@ -50,7 +51,7 @@ from bpy.props import *
 # - Delete old object
 # - Restore name of object and object data
 def applyModifierForObjectWithShapeKeys(context, modifierName):
-	
+    
     list_properties = []
     properties = ["interpolation", "mute", "name", "relative_key", "slider_max", "slider_min", "value", "vertex_group"]
     list = []
@@ -61,15 +62,15 @@ def applyModifierForObjectWithShapeKeys(context, modifierName):
     
     if(list_shapes == []):
         bpy.ops.object.modifier_apply(apply_as='DATA', modifier=modifierName)
-        return context.scene.objects.active
+        return context.view_layer.objects.active
     
-    list.append(context.scene.objects.active)
+    list.append(context.view_layer.objects.active)
     for i in range(1, len(list_shapes)):
-        bpy.ops.object.duplicate_move(OBJECT_OT_duplicate={"linked":False, "mode":'TRANSLATION'}, TRANSFORM_OT_translate={"value":(0, 0, 0), "constraint_axis":(False, False, False), "constraint_orientation":'GLOBAL', "mirror":False, "proportional":'DISABLED', "proportional_edit_falloff":'SMOOTH', "proportional_size":1, "snap":False, "snap_target":'CLOSEST', "snap_point":(0, 0, 0), "snap_align":False, "snap_normal":(0, 0, 0), "texture_space":False, "release_confirm":False})
-        list.append(context.scene.objects.active)
+        bpy.ops.object.duplicate_move(OBJECT_OT_duplicate={"linked":False, "mode":'TRANSLATION'}, TRANSFORM_OT_translate={"value":(0, 0, 0), "constraint_axis":(False, False, False), "orient_type":'GLOBAL', "mirror":False, "proportional":'DISABLED', "proportional_edit_falloff":'SMOOTH', "proportional_size":1, "snap":False, "snap_target":'CLOSEST', "snap_point":(0, 0, 0), "snap_align":False, "snap_normal":(0, 0, 0), "texture_space":False, "release_confirm":False})
+        list.append(context.view_layer.objects.active)
 
     for i, o in enumerate(list):
-        context.scene.objects.active = o
+        context.view_layer.objects.active = o
         key_b = o.data.shape_keys.key_blocks[i]
         print (o.data.shape_keys.key_blocks[i].name, key_b.name)
         properties_object = {p:None for p in properties}
@@ -95,11 +96,11 @@ def applyModifierForObjectWithShapeKeys(context, modifierName):
         bpy.ops.object.modifier_apply(apply_as='DATA', modifier=modifierName)
     
     bpy.ops.object.select_all(action='DESELECT')
-    context.scene.objects.active = list[0]
-    list[0].select = True
+    context.view_layer.objects.active = list[0]
+    context.view_layer.objects.active.select_set(True)
     bpy.ops.object.shape_key_add(from_mix=False)
     #workaround for "this type doesn't support IDProperties" handicap error
-    key_b0 = context.scene.objects.active.data.shape_keys.key_blocks[0]
+    key_b0 = context.view_layer.objects.active.data.shape_keys.key_blocks[0]
     key_b0.name = list_properties[0]["name"]
     key_b0.interpolation = list_properties[0]["interpolation"]
     key_b0.mute = list_properties[0]["mute"]
@@ -109,10 +110,10 @@ def applyModifierForObjectWithShapeKeys(context, modifierName):
     key_b0.vertex_group = list_properties[0]["vertex_group"]
 
     for i in range(1, len(list)):
-        list[i].select = True
+        list[i].select_set(True)
         bpy.ops.object.join_shapes()
-        list[i].select = False
-        key_b = context.scene.objects.active.data.shape_keys.key_blocks[i]
+        list[i].select_set(False)
+        key_b = context.view_layer.objects.active.data.shape_keys.key_blocks[i]
         key_b.name = list_properties[i]["name"]
         key_b.interpolation = list_properties[i]["interpolation"]
         key_b.mute = list_properties[i]["mute"]
@@ -122,49 +123,48 @@ def applyModifierForObjectWithShapeKeys(context, modifierName):
         key_b.vertex_group = list_properties[i]["vertex_group"]
 
     for i in range(0, len(list)):
-        key_b = context.scene.objects.active.data.shape_keys.key_blocks[i]
+        key_b = context.view_layer.objects.active.data.shape_keys.key_blocks[i]
         rel_key = list_properties[i]["relative_key"]
 
         for j in range(0, len(list)):
-            key_brel = context.scene.objects.active.data.shape_keys.key_blocks[j]
+            key_brel = context.view_layer.objects.active.data.shape_keys.key_blocks[j]
             if rel_key == key_brel.name:
                 key_b.relative_key = key_brel
                 break
 
     bpy.ops.object.select_all(action='DESELECT')
     for o in list[1:]:
-        o.select = True
+        o.select_set(True)
 
     bpy.ops.object.delete(use_global=False)
-    context.scene.objects.active = list[0]
-    context.scene.objects.active.select = True
-    return context.scene.objects.active
+    context.view_layer.objects.active = list[0]
+    context.view_layer.objects.active.select_set(True)
+    return context.view_layer.objects.active
 
 class ApplyModifierForObjectWithShapeKeysOperator(bpy.types.Operator):
     bl_idname = "object.apply_modifier_for_object_with_shape_keys"
     bl_label = "Apply modifier for object with shape keys"
  
     def item_list(self, context):
-        return [(modifier.name, modifier.name, modifier.name) for modifier in bpy.context.scene.objects.active.modifiers]
- 
+        #return [(modifier.name, modifier.name, modifier.name) for modifier in bpy.context.scene.objects.active.modifiers]
+        return [(modifier.name, modifier.name, modifier.name) for modifier in bpy.context.view_layer.objects.active.modifiers]
+        
     my_enum = EnumProperty(name="Modifier name",
         items = item_list)
  
     def execute(self, context):
     
-        ob = context.scene.objects.active
+        ob = context.view_layer.objects.active
         bpy.ops.object.select_all(action='DESELECT')
-        context.scene.objects.active = ob
-        context.scene.objects.active.select = True
+        context.view_layer.objects.active = ob
+        ob.select_set(True)
         applyModifierForObjectWithShapeKeys(context, self.my_enum)
         
         return {'FINISHED'}
  
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self)
-        
-bpy.utils.register_class(ApplyModifierForObjectWithShapeKeysOperator)
-
+register_class(ApplyModifierForObjectWithShapeKeysOperator)
 
 class DialogPanel(bpy.types.Panel):
     bl_label = "Multi Shape Keys"
@@ -180,10 +180,8 @@ def menu_func(self, context):
         text="Apply modifier for object with shape keys")
  
 def register():
-   bpy.utils.register_module(__name__)
+    register_class(DialogPanel)
  
-def unregister():
-    bpy.utils.unregister_module(__name__)
- 
-if __name__ == "__main__":
-    register()
+#def unregister():
+#    bpy.utils.unregister_module(__name__)
+register()
