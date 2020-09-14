@@ -5,13 +5,15 @@ Apply modifier and remove from the stack for object with shape keys (Pushing 'Ap
 
 Usage
 
-Press 'space' and choose 'Apply modifier for object with shape keys' action.
+Press 'F3' and choose 'Apply modifier for object with shape keys' action.
 
 ![screen](screen.png 'Addon location')
 
 Installation
 
 It is a plugin. Select "File -> User Preferences" and choose "Addon" tab. Click "Install from file..." and choose downloaded file.
+
+For Blender 2.9 make sure "Edit -> Preferences -> Interface -> Developer Extras" is checked.
 
 How script works
 
