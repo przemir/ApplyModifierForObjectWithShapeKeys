@@ -30,7 +30,7 @@
 bl_info = {
     "name":         "Apply modifier for object with shape keys",
     "author":       "Przemysław Bągard",
-    "blender":      (2,90,0),
+    "blender":      (2,91,2),
     "version":      (0,1,0),
     "location":     "Context menu",
     "description":  "Apply modifier and remove from the stack for object with shape keys (Pushing 'Apply' button in 'Object modifiers' tab result in an error 'Modifier cannot be applied to a mesh with shape keys').",
@@ -140,9 +140,13 @@ classes = [
     ApplyModifierForObjectWithShapeKeysOperator
 ]
 
+def menu_func(self, context):
+    self.layout.operator(ApplyModifierForObjectWithShapeKeysOperator.bl_idname)
+
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
+    bpy.types.VIEW3D_MT_object.append(menu_func)
  
 def unregister():
     for cls in classes:

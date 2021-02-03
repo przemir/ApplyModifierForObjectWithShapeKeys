@@ -13,7 +13,7 @@ Installation
 
 It is a plugin. Select "File -> User Preferences" and choose "Addon" tab. Click "Install from file..." and choose downloaded file.
 
-For Blender 2.9 make sure "Edit -> Preferences -> Interface -> Developer Extras" is checked.
+For Blender 2.9 make sure "Edit -> Preferences -> Interface -> Developer Extras" is checked. Blender 2.91.2 does not require this step.
 
 How script works
 
