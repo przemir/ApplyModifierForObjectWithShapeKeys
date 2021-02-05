@@ -122,6 +122,17 @@ class ApplyModifierForObjectWithShapeKeysOperator(bpy.types.Operator):
         applyModifierForObjectWithShapeKeys(context, self.my_enum)
         
         return {'FINISHED'}
+        
+    def draw(self, context):
+        if context.object.data.shape_keys.animation_data:
+            self.layout.separator()
+            self.layout.label(text="Warning:")
+            self.layout.label(text="              Object contains animation data")
+            self.layout.label(text="              (like drivers, keyframes etc.)")
+            self.layout.label(text="              assigned to shape keys.")
+            self.layout.label(text="              Those data will be lost!")
+            self.layout.separator()
+        self.layout.prop(self, "my_enum")
  
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self)
