@@ -53,6 +53,8 @@ def applyModifierForObjectWithShapeKeys(context, modifierName):
     list_names = []
     list = []
     list_shapes = []
+    vertCount = -1
+    differentVertCount = False
     if context.object.data.shape_keys:
         list_shapes = [o for o in context.object.data.shape_keys.key_blocks]
     
@@ -82,7 +84,17 @@ def applyModifierForObjectWithShapeKeys(context, modifierName):
         bpy.ops.object.shape_key_remove()
         # time to apply modifiers
         bpy.ops.object.modifier_apply(modifier=modifierName)
+        if vertCount == -1:
+            vertCount = len(o.data.vertices)
+        if vertCount != len(o.data.vertices):
+            differentVertCount = True
     
+    if differentVertCount:
+        errorInfo = ("Shape keys ended up with different number of vertices!\n"
+                     "All shape keys needs to have the same number of vertices after modifier is applied.\n"
+                     "Otherwise joining such shape keys will fail!")
+        return (False, errorInfo)
+            
     bpy.ops.object.select_all(action='DESELECT')
     context.view_layer.objects.active = list[0]
     list[0].select_set(True)
@@ -101,7 +113,7 @@ def applyModifierForObjectWithShapeKeys(context, modifierName):
     bpy.ops.object.delete(use_global=False)
     context.view_layer.objects.active = list[0]
     context.view_layer.objects.active.select_set(True)
-    return context.view_layer.objects.active
+    return (True, None)
 
 class ApplyModifierForObjectWithShapeKeysOperator(bpy.types.Operator):
     bl_idname = "object.apply_modifier_for_object_with_shape_keys"
@@ -119,7 +131,10 @@ class ApplyModifierForObjectWithShapeKeysOperator(bpy.types.Operator):
         bpy.ops.object.select_all(action='DESELECT')
         context.view_layer.objects.active = ob
         ob.select_set(True)
-        applyModifierForObjectWithShapeKeys(context, self.my_enum)
+        success, errorInfo = applyModifierForObjectWithShapeKeys(context, self.my_enum)
+        
+        if not success:
+            self.report({'ERROR'}, errorInfo)
         
         return {'FINISHED'}
         
@@ -139,6 +154,7 @@ class ApplyModifierForObjectWithShapeKeysOperator(bpy.types.Operator):
         
 
 class DialogPanel(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_apply_modifier_for_object_with_shape_keys"
     bl_label = "Multi Shape Keys"
     bl_space_type = "VIEW_3D"
     bl_region_type = "TOOLS"

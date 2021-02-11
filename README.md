@@ -11,11 +11,11 @@ Press 'F3' and choose 'Apply modifier for object with shape keys' action.
 
 Installation
 
-It is a plugin. Select "File -> User Preferences" and choose "Addon" tab. Click "Install from file..." and choose downloaded file.
+It is a plugin. Select "File -> User Preferences" and choose "Addon" tab. Click "Install from file..." and choose downloaded file (just file "ApplyModifierForObjectWithShapeKeys.py", not folder).
 
 For Blender 2.9 make sure "Edit -> Preferences -> Interface -> Developer Extras" is checked. Blender 2.91.2 does not require this step.
 
 How script works
 
 Object is duplicated to match number of shapekeys. From every object shapekeys are removed leaving only one shapekey. After that last the shapekey of each object has to be removed. Now each object apply modifier. After that object are joined to first one as shapes.
-Note that this solution may not work for modifiers which change different vertices number for different shapes (for example 'Boolean' modifier).
+Note that this solution may not work for modifiers which change different vertices number for different shapes (for example 'Boolean' modifier, or 'Mirror' with merge option).
