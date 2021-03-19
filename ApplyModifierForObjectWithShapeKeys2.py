@@ -27,9 +27,10 @@
 # Description: Apply modifier and remove from the stack for object with shape keys
 # (Pushing 'Apply' button in 'Object modifiers' tab result in an error 'Modifier cannot be applied to a mesh with shape keys').
 
+
 bl_info = {
     "name":         "Apply modifier for object with shape keys",
-    "author":       "Przemysław Bągard",
+    "author":       "Przemysław Bągard", # Updated by Iszotic
     "blender":      (2,9,2),
     "version":      (0,1,0),
     "location":     "Context menu",
@@ -61,7 +62,7 @@ def applyModifierForObjectWithShapeKeys(context, modifierName):
         list_shapes = [o for o in context.object.data.shape_keys.key_blocks]
     
     if(list_shapes == []):
-        bpy.ops.object.modifier_apply(apply_as='DATA', modifier=modifierName)
+        bpy.ops.object.modifier_apply(modifier=modifierName)
         return context.view_layer.objects.active
     
     list.append(context.view_layer.objects.active)
@@ -93,7 +94,7 @@ def applyModifierForObjectWithShapeKeys(context, modifierName):
         context.object.active_shape_key_index = 0
         bpy.ops.object.shape_key_remove()
         # time to apply modifiers
-        bpy.ops.object.modifier_apply(modifier=modifierName)
+        bpy.ops.object.modifier_apply(modifier=modifierName) #method no longer has keywoard argument "apply_as"
     
     bpy.ops.object.select_all(action='DESELECT')
     context.view_layer.objects.active = list[0]
