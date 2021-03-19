@@ -7,4 +7,4 @@ Installation
 
 It is a plugin. Select "File -> User Preferences" and choose "Addon" tab. Click "Install from file..." and choose downloaded file.
 
-Updated to 2.8
+Updated to 2.9.2
