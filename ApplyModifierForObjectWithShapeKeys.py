@@ -29,7 +29,7 @@
 
 bl_info = {
     "name":         "Apply modifier for object with shape keys",
-    "author":       "Przemysław Bągard", # Updated by Iszotic
+    "author":       "Przemysław Bągard, additonal contributions by Iszotic",
     "blender":      (2,92,0),
     "version":      (0,1,0),
     "location":     "Context menu",
