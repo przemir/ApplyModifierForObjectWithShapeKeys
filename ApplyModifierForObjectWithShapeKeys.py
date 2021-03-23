@@ -29,8 +29,8 @@
 
 bl_info = {
     "name":         "Apply modifier for object with shape keys",
-    "author":       "Przemysław Bągard",
-    "blender":      (2,91,2),
+    "author":       "Przemysław Bągard", # Updated by Iszotic
+    "blender":      (2,92,0),
     "version":      (0,1,0),
     "location":     "Context menu",
     "description":  "Apply modifier and remove from the stack for object with shape keys (Pushing 'Apply' button in 'Object modifiers' tab result in an error 'Modifier cannot be applied to a mesh with shape keys').",
@@ -38,6 +38,7 @@ bl_info = {
 }
 
 import bpy, math
+from bpy.utils import register_class
 from bpy.props import *
 
 # Algorithm:
@@ -50,7 +51,9 @@ from bpy.props import *
 # - Delete old object
 # - Restore name of object and object data
 def applyModifierForObjectWithShapeKeys(context, modifierName):
-    list_names = []
+    
+    list_properties = []
+    properties = ["interpolation", "mute", "name", "relative_key", "slider_max", "slider_min", "value", "vertex_group"]
     list = []
     list_shapes = []
     vertCount = -1
@@ -69,7 +72,19 @@ def applyModifierForObjectWithShapeKeys(context, modifierName):
 
     for i, o in enumerate(list):
         context.view_layer.objects.active = o
-        list_names.append(o.data.shape_keys.key_blocks[i].name)
+        key_b = o.data.shape_keys.key_blocks[i]
+        print (o.data.shape_keys.key_blocks[i].name, key_b.name)
+        properties_object = {p:None for p in properties}
+        properties_object["name"] = key_b.name
+        properties_object["mute"] = key_b.mute
+        properties_object["interpolation"] = key_b.interpolation
+        properties_object["relative_key"] = key_b.relative_key.name
+        properties_object["slider_max"] = key_b.slider_max
+        properties_object["slider_min"] = key_b.slider_min
+        properties_object["value"] = key_b.value
+        properties_object["vertex_group"] = key_b.vertex_group
+        list_properties.append(properties_object)
+
         for j in range(i+1, len(list))[::-1]:
             context.object.active_shape_key_index = j
             bpy.ops.object.shape_key_remove()
@@ -99,13 +114,40 @@ def applyModifierForObjectWithShapeKeys(context, modifierName):
     context.view_layer.objects.active = list[0]
     list[0].select_set(True)
     bpy.ops.object.shape_key_add(from_mix=False)
-    context.view_layer.objects.active.data.shape_keys.key_blocks[0].name = list_names[0]
+    #workaround for "this type doesn't support IDProperties" handicap error
+    key_b0 = context.view_layer.objects.active.data.shape_keys.key_blocks[0]
+    key_b0.name = list_properties[0]["name"]
+    key_b0.interpolation = list_properties[0]["interpolation"]
+    key_b0.mute = list_properties[0]["mute"]
+    key_b0.slider_max = list_properties[0]["slider_max"]
+    key_b0.slider_min = list_properties[0]["slider_min"]
+    key_b0.value = list_properties[0]["value"]
+    key_b0.vertex_group = list_properties[0]["vertex_group"]
+
     for i in range(1, len(list)):
         list[i].select_set(True)
         bpy.ops.object.join_shapes()
         list[i].select_set(False)
-        context.view_layer.objects.active.data.shape_keys.key_blocks[i].name = list_names[i]
-    
+
+        key_b = context.view_layer.objects.active.data.shape_keys.key_blocks[i]
+        key_b.name = list_properties[i]["name"]
+        key_b.interpolation = list_properties[i]["interpolation"]
+        key_b.mute = list_properties[i]["mute"]
+        key_b.slider_max = list_properties[i]["slider_max"]
+        key_b.slider_min = list_properties[i]["slider_min"]
+        key_b.value = list_properties[i]["value"]
+        key_b.vertex_group = list_properties[i]["vertex_group"]
+
+    for i in range(0, len(list)):
+        key_b = context.view_layer.objects.active.data.shape_keys.key_blocks[i]
+        rel_key = list_properties[i]["relative_key"]
+
+        for j in range(0, len(list)):
+            key_brel = context.view_layer.objects.active.data.shape_keys.key_blocks[j]
+            if rel_key == key_brel.name:
+                key_b.relative_key = key_brel
+                break
+
     bpy.ops.object.select_all(action='DESELECT')
     for o in list[1:]:
         o.select_set(True)
@@ -126,7 +168,6 @@ class ApplyModifierForObjectWithShapeKeysOperator(bpy.types.Operator):
         items = item_list)
  
     def execute(self, context):
-    
         ob = bpy.context.object
         bpy.ops.object.select_all(action='DESELECT')
         context.view_layer.objects.active = ob
@@ -151,7 +192,6 @@ class ApplyModifierForObjectWithShapeKeysOperator(bpy.types.Operator):
  
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self)
-        
 
 class DialogPanel(bpy.types.Panel):
     bl_idname = "OBJECT_PT_apply_modifier_for_object_with_shape_keys"
