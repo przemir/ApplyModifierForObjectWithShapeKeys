@@ -31,7 +31,7 @@ bl_info = {
     "name":         "Apply modifier for object with shape keys",
     "author":       "Przemysław Bągard, additonal contributions by Iszotic",
     "blender":      (2,92,0),
-    "version":      (0,1,0),
+    "version":      (0,1,1),
     "location":     "Context menu",
     "description":  "Apply modifier and remove from the stack for object with shape keys (Pushing 'Apply' button in 'Object modifiers' tab result in an error 'Modifier cannot be applied to a mesh with shape keys').",
     "category":     "Object Tools > Multi Shape Keys"
@@ -50,7 +50,7 @@ from bpy.props import *
 # - Delete all duplicated object except one
 # - Delete old object
 # - Restore name of object and object data
-def applyModifierForObjectWithShapeKeys(context, modifierName):
+def applyModifierForObjectWithShapeKeys(context, modifierName, disable_armatures):
     
     list_properties = []
     properties = ["interpolation", "mute", "name", "relative_key", "slider_max", "slider_min", "value", "vertex_group"]
@@ -58,6 +58,14 @@ def applyModifierForObjectWithShapeKeys(context, modifierName):
     list_shapes = []
     vertCount = -1
     differentVertCount = False
+    
+    disabled_armature_modifiers = []
+    if disable_armatures:
+        for modifier in context.object.modifiers:
+            if modifier.name != modifierName and modifier.type == 'ARMATURE' and modifier.show_viewport == True:
+                disabled_armature_modifiers.append(modifier)
+                modifier.show_viewport = False
+    
     if context.object.data.shape_keys:
         list_shapes = [o for o in context.object.data.shape_keys.key_blocks]
     
@@ -155,6 +163,11 @@ def applyModifierForObjectWithShapeKeys(context, modifierName):
     bpy.ops.object.delete(use_global=False)
     context.view_layer.objects.active = list[0]
     context.view_layer.objects.active.select_set(True)
+    
+    if disable_armatures:
+        for modifier in disabled_armature_modifiers:
+            modifier.show_viewport = True
+    
     return (True, None)
 
 class ApplyModifierForObjectWithShapeKeysOperator(bpy.types.Operator):
@@ -164,15 +177,16 @@ class ApplyModifierForObjectWithShapeKeysOperator(bpy.types.Operator):
     def item_list(self, context):
         return [(modifier.name, modifier.name, modifier.name) for modifier in bpy.context.object.modifiers]
  
-    my_enum = EnumProperty(name="Modifier name",
-        items = item_list)
+    my_enum = EnumProperty(name="Modifier name", items = item_list)
+    
+    disable_armatures = BoolProperty(name="Don't include armature deformations", default = True)
  
     def execute(self, context):
         ob = bpy.context.object
         bpy.ops.object.select_all(action='DESELECT')
         context.view_layer.objects.active = ob
         ob.select_set(True)
-        success, errorInfo = applyModifierForObjectWithShapeKeys(context, self.my_enum)
+        success, errorInfo = applyModifierForObjectWithShapeKeys(context, self.my_enum, self.disable_armatures)
         
         if not success:
             self.report({'ERROR'}, errorInfo)
@@ -189,6 +203,7 @@ class ApplyModifierForObjectWithShapeKeysOperator(bpy.types.Operator):
             self.layout.label(text="              Those data will be lost!")
             self.layout.separator()
         self.layout.prop(self, "my_enum")
+        self.layout.prop(self, "disable_armatures")
  
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self)
