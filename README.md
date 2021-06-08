@@ -1,5 +1,5 @@
 # ApplyModifierForObjectWithShapeKeys
-Blender script
+*Blender script*
 
 Apply modifier and remove from the stack for object with shape keys (Pushing 'Apply' button in 'Object modifiers' tab result in an error 'Modifier cannot be applied to a mesh with shape keys').
 
@@ -9,15 +9,17 @@ Press 'F3' and choose 'Apply modifier for object with shape keys' action.
 
 ![screen](screen.png 'Addon location')
 
-Installation
+## Installation
 
-It is a plugin. Select "File -> User Preferences" and choose "Addon" tab. Click "Install from file..." and choose downloaded file (just file "ApplyModifierForObjectWithShapeKeys.py", not folder).
+Select "File -> User Preferences" and choose "Addon" tab. Click "Install from file..." and choose the downloaded file (only "ApplyModifierForObjectWithShapeKeys.py", not the folder).
 
-For Blender 2.9 make sure "Edit -> Preferences -> Interface -> Developer Extras" is checked. Blender 2.91.2 does not require this step.
+For Blender 2.9 make sure "Edit -> Preferences -> Interface -> Developer Extras" is checked. Blender 2.91.2 onward does not require this step.
 
-How script works
+## How the script works
 
-Object is duplicated to match number of shapekeys. From every object shapekeys are removed leaving only one shapekey. After that last the shapekey of each object has to be removed. Now each object apply modifier. After that object are joined to first one as shapes.
-Note that this solution may not work for modifiers which change different vertices number for different shapes (for example 'Boolean' modifier, or 'Mirror' with merge option).
+The object is duplicated to match the number of shapekeys. For each object, all but one shape key is removed, with each object having a different shape key. Then, each object applies the selected modifier. After that, all objects are merged into one as shape keys.
+Note that this solution may not work for modifiers which change the amount of vertices for different shapes (for example, 'Boolean' modifier, or 'Mirror' with merge option).
 
-Updated to 2.9.2
+## Recent changes
+
+Updated to 2.93
