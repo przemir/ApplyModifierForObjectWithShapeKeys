@@ -29,9 +29,9 @@
 
 bl_info = {
     "name":         "Apply modifier for object with shape keys",
-    "author":       "Przemysław Bągard, additonal contributions by Iszotic",
-    "blender":      (2,92,0),
-    "version":      (0,1,1),
+    "author":       "Przemysław Bągard, additonal contributions by Iszotic, updated to 2.93 by Fro Zen",
+    "blender":      (2,93,0),
+    "version":      (0,1,2),
     "location":     "Context menu",
     "description":  "Apply modifier and remove from the stack for object with shape keys (Pushing 'Apply' button in 'Object modifiers' tab result in an error 'Modifier cannot be applied to a mesh with shape keys').",
     "category":     "Object Tools > Multi Shape Keys"
@@ -177,9 +177,17 @@ class ApplyModifierForObjectWithShapeKeysOperator(bpy.types.Operator):
     def item_list(self, context):
         return [(modifier.name, modifier.name, modifier.name) for modifier in bpy.context.object.modifiers]
  
-    my_enum = EnumProperty(name="Modifier name", items = item_list)
+    #my_enum = EnumProperty(name="Modifier name", items = item_list)
+    my_enum: EnumProperty(
+    name="Modifier name",
+    items=item_list,
+    )
     
-    disable_armatures = BoolProperty(name="Don't include armature deformations", default = True)
+    #disable_armatures = BoolProperty(name="Don't include armature deformations", default = True)
+    disable_armatures: BoolProperty(
+    name="Don't include armature deformations",
+    default=True,
+    )
  
     def execute(self, context):
         ob = bpy.context.object
