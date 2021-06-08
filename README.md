@@ -4,7 +4,7 @@
 Apply modifiers and remove them from the stack for objects with shape keys. 
 (Pushing 'Apply' in the 'Object modifiers' tab results in the error 'Modifier cannot be applied to a mesh with shape keys').
 
-##Usage
+## Usage
 
 Press 'F3' and choose 'Apply modifier for object with shape keys'.
 
