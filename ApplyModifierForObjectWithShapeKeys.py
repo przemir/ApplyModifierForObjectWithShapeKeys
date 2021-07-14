@@ -70,8 +70,8 @@ def applyModifierForObjectWithShapeKeys(context, modifierName, disable_armatures
         list_shapes = [o for o in context.object.data.shape_keys.key_blocks]
     
     if(list_shapes == []):
-        bpy.ops.object.modifier_apply(apply_as='DATA', modifier=modifierName)
-        return context.view_layer.objects.active
+        bpy.ops.object.modifier_apply(modifier=modifierName)
+        return (True, None)
     
     list.append(context.view_layer.objects.active)
     for i in range(1, len(list_shapes)):
@@ -202,7 +202,7 @@ class ApplyModifierForObjectWithShapeKeysOperator(bpy.types.Operator):
         return {'FINISHED'}
         
     def draw(self, context):
-        if context.object.data.shape_keys.animation_data:
+        if context.object.data.shape_keys and context.object.data.shape_keys.animation_data:
             self.layout.separator()
             self.layout.label(text="Warning:")
             self.layout.label(text="              Object contains animation data")
