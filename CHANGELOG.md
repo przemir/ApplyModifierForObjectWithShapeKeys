@@ -1,3 +1,7 @@
+2021-10-31
+1) Algorithm changed! Now instead of copying objects with all shape keys then removing those shape keys, objects are copied without shape keys (except first one), then shape keys are transferred from original object to corresponding copies. It should be faster and less memory consuming for heavier models with many shape keys that way.
+2) Changed combo to list with checkboxes for modifiers. It is possible now to apply multiple modifiers at once.
+
 2021-03-23
 1) Merged pull request. Thanks to Iszotic, addon now preserve some shape key's properties like value, range, mute, vertex group, relative to.
 2) Added checkbox 'Don't include armature deformations', enabled by default. This solve the problem with applying bone scale to shape key during process.

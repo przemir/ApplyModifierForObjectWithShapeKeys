@@ -21,6 +21,9 @@ For Blender 2.9 make sure "Edit -> Preferences -> Interface -> Developer Extras"
 The object is duplicated to match the number of shapekeys. For each object, all but one shape key is removed, with each object having a different shape key. Then, each object applies the selected modifier. After that, all objects are merged into one as shape keys.
 Note that this solution may not work for modifiers which change the amount of vertices for different shapes (for example, 'Boolean' modifier, or 'Mirror' with merge option).
 
+Algorithm changed!
+Now instead of copying objects with all shape keys then removing those shape keys, objects are copied without shape keys (except first one), then shape keys are transferred from original object to corresponding copies. It should be faster and less memory consuming for heavier models with many shape keys that way.
+
 ## Recent changes
 
 Updated to 2.93
