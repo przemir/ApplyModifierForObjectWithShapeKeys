@@ -22,7 +22,8 @@ The object is duplicated to match the number of shapekeys. For each object, all 
 Note that this solution may not work for modifiers which change the amount of vertices for different shapes (for example, 'Boolean' modifier, or 'Mirror' with merge option).
 
 Algorithm changed!
-Now instead of copying objects with all shape keys then removing those shape keys, objects are copied without shape keys (except first one), then shape keys are transferred from original object to corresponding copies. It should be faster and less memory consuming for heavier models with many shape keys that way.
+Now instead of copying all objects to list, they are handled one by one. There will be maximum 3 copies of objects (including original object) at time.
+It should be less memory consuming for heavier models with many shape keys that way.
 
 ## Recent changes
 

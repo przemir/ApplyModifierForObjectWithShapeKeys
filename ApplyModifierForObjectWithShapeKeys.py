@@ -31,7 +31,7 @@ bl_info = {
     "name":         "Apply modifier for object with shape keys",
     "author":       "Przemysław Bągard, additonal contributions by Iszotic, updated to 2.93 by Fro Zen",
     "blender":      (2,93,0),
-    "version":      (0,2,0),
+    "version":      (0,2,1),
     "location":     "Context menu",
     "description":  "Apply modifier and remove from the stack for object with shape keys (Pushing 'Apply' button in 'Object modifiers' tab result in an error 'Modifier cannot be applied to a mesh with shape keys').",
     "category":     "Object Tools > Multi Shape Keys"
@@ -52,21 +52,25 @@ from bpy.props import *
 # Original object should be preserved (to keep object name and other data associated with object/mesh). 
 
 # Algorithm (new):
-# - Original object is copied, then all shape keys are removed from copy.
-# - The rest of objects are copied from object created during previous step (they are without shape keys so they should be lighter)
-# - For each shape key except base transfer one from original object to corresponding copy. Then remove base shape for copies and apply modifiers.
-# - For original object, remove all shape keys, then apply modifiers.
-# - Joining shape keys (nothing new here).
+# Don't make list of copies, handle it one shape at time.
+# In this algorithm there shouldn't be more than 3 copy of object at time, so it should be more memory-friendly.
+#
+# - Copy object which will hold shape keys
+# - For original object (which will be also result object), remove all shape keys, then apply modifiers. Add "base" shape key
+# - For each shape key except base copy temporary object from copy. Then for temporaryObject:
+#     - remove all shape keys except one (done by removing all shape keys, then transfering the right one from copyObject)
+#     - apply modifiers
+#     - merge with originalObject
+#     - delete temporaryObject
+# - Delete copyObject.
 
 def applyModifierForObjectWithShapeKeys(context, selectedModifiers, disable_armatures):
     
     list_properties = []
     properties = ["interpolation", "mute", "name", "relative_key", "slider_max", "slider_min", "value", "vertex_group"]
-    list = []
-    list_shapes = []
+    shapesCount = 0
     vertCount = -1
-    differentVertCount = False
-    
+
     disabled_armature_modifiers = []
     if disable_armatures:
         for modifier in context.object.modifiers:
@@ -75,27 +79,29 @@ def applyModifierForObjectWithShapeKeys(context, selectedModifiers, disable_arma
                 modifier.show_viewport = False
     
     if context.object.data.shape_keys:
-        list_shapes = [o for o in context.object.data.shape_keys.key_blocks]
+        shapesCount = len(context.object.data.shape_keys.key_blocks)
     
-    if(list_shapes == []):
+    if(shapesCount == 0):
         for modifierName in selectedModifiers:
             bpy.ops.object.modifier_apply(modifier=modifierName)
         return (True, None)
     
+    # We want to preserve original object, so all shapes will be joined to it.
     originalObject = context.view_layer.objects.active
-    list.append(context.view_layer.objects.active)
-    # Fill list with objects without shape keys. "originalObject" will keep base shape.
-    if len(list_shapes) > 1:
-        bpy.ops.object.duplicate_move(OBJECT_OT_duplicate={"linked":False, "mode":'TRANSLATION'}, TRANSFORM_OT_translate={"value":(0, 0, 0), "orient_type":'GLOBAL', "orient_matrix":((1, 0, 0), (0, 1, 0), (0, 0, 1)), "orient_matrix_type":'GLOBAL', "constraint_axis":(False, False, False), "mirror":True, "use_proportional_edit":False, "proportional_edit_falloff":'SMOOTH', "proportional_size":1, "use_proportional_connected":False, "use_proportional_projected":False, "snap":False, "snap_target":'CLOSEST', "snap_point":(0, 0, 0), "snap_align":False, "snap_normal":(0, 0, 0), "gpencil_strokes":False, "cursor_transform":False, "texture_space":False, "remove_on_cancel":False, "release_confirm":False, "use_accurate":False})
-        copyObject = context.view_layer.objects.active
-        bpy.ops.object.shape_key_remove(all=True)
-        list.append(context.view_layer.objects.active)
-        for i in range(2, len(list_shapes)):
-            bpy.ops.object.duplicate_move(OBJECT_OT_duplicate={"linked":False, "mode":'TRANSLATION'}, TRANSFORM_OT_translate={"value":(0, 0, 0), "orient_type":'GLOBAL', "orient_matrix":((1, 0, 0), (0, 1, 0), (0, 0, 1)), "orient_matrix_type":'GLOBAL', "constraint_axis":(False, False, False), "mirror":True, "use_proportional_edit":False, "proportional_edit_falloff":'SMOOTH', "proportional_size":1, "use_proportional_connected":False, "use_proportional_projected":False, "snap":False, "snap_target":'CLOSEST', "snap_point":(0, 0, 0), "snap_align":False, "snap_normal":(0, 0, 0), "gpencil_strokes":False, "cursor_transform":False, "texture_space":False, "remove_on_cancel":False, "release_confirm":False, "use_accurate":False})
-            list.append(context.view_layer.objects.active)
+    bpy.ops.object.select_all(action='DESELECT')
+    originalObject.select_set(True)
     
+    # Copy object which will holds all shape keys.
+    bpy.ops.object.duplicate_move(OBJECT_OT_duplicate={"linked":False, "mode":'TRANSLATION'}, TRANSFORM_OT_translate={"value":(0, 0, 0), "orient_type":'GLOBAL', "orient_matrix":((1, 0, 0), (0, 1, 0), (0, 0, 1)), "orient_matrix_type":'GLOBAL', "constraint_axis":(False, False, False), "mirror":True, "use_proportional_edit":False, "proportional_edit_falloff":'SMOOTH', "proportional_size":1, "use_proportional_connected":False, "use_proportional_projected":False, "snap":False, "snap_target":'CLOSEST', "snap_point":(0, 0, 0), "snap_align":False, "snap_normal":(0, 0, 0), "gpencil_strokes":False, "cursor_transform":False, "texture_space":False, "remove_on_cancel":False, "release_confirm":False, "use_accurate":False})
+    copyObject = context.view_layer.objects.active
+    copyObject.select_set(False)
+    
+    # Return selection to originalObject.
     context.view_layer.objects.active = originalObject
-    for i in range(0, len(list_shapes)):
+    originalObject.select_set(True)
+    
+    # Save key shape properties
+    for i in range(0, shapesCount):
         key_b = originalObject.data.shape_keys.key_blocks[i]
         print (originalObject.data.shape_keys.key_blocks[i].name, key_b.name)
         properties_object = {p:None for p in properties}
@@ -108,98 +114,59 @@ def applyModifierForObjectWithShapeKeys(context, selectedModifiers, disable_arma
         properties_object["value"] = key_b.value
         properties_object["vertex_group"] = key_b.vertex_group
         list_properties.append(properties_object)
+
+    # Handle base shape in "originalObject"
+    bpy.ops.object.shape_key_remove(all=True)
+    for modifierName in selectedModifiers:
+        bpy.ops.object.modifier_apply(modifier=modifierName)
+    vertCount = len(originalObject.data.vertices)
+    bpy.ops.object.shape_key_add(from_mix=False)
+    originalObject.select_set(False)
     
-    # Handle copies and leave "originalObject".
-    # For each copy, transfer corresponding shape key from "originalObject".
-    bpy.ops.object.select_all(action='DESELECT')
-    originalObject.select_set(True)
-    for i, o in enumerate(list):
-        if i == 0:
-            continue
-        originalObject.active_shape_key_index = i
-        o.select_set(True)
-        context.view_layer.objects.active = o
+    # Handle other shape-keys: copy object, get right shape-key, apply modifiers and merge with originalObject.
+    # We handle one object at time here.
+    for i in range(1, shapesCount):
+        context.view_layer.objects.active = copyObject
+        copyObject.select_set(True)
+        
+        # Copy temp object.
+        bpy.ops.object.duplicate_move(OBJECT_OT_duplicate={"linked":False, "mode":'TRANSLATION'}, TRANSFORM_OT_translate={"value":(0, 0, 0), "orient_type":'GLOBAL', "orient_matrix":((1, 0, 0), (0, 1, 0), (0, 0, 1)), "orient_matrix_type":'GLOBAL', "constraint_axis":(False, False, False), "mirror":True, "use_proportional_edit":False, "proportional_edit_falloff":'SMOOTH', "proportional_size":1, "use_proportional_connected":False, "use_proportional_projected":False, "snap":False, "snap_target":'CLOSEST', "snap_point":(0, 0, 0), "snap_align":False, "snap_normal":(0, 0, 0), "gpencil_strokes":False, "cursor_transform":False, "texture_space":False, "remove_on_cancel":False, "release_confirm":False, "use_accurate":False})
+        tmpObject = context.view_layer.objects.active
+        bpy.ops.object.shape_key_remove(all=True)
+        copyObject.select_set(True)
+        copyObject.active_shape_key_index = i
+        
+        # Get right shape-key.
         bpy.ops.object.shape_key_transfer()
         context.object.active_shape_key_index = 0
         bpy.ops.object.shape_key_remove()
         bpy.ops.object.shape_key_remove(all=True)
-        # time to apply modifiers
+        
+        # Time to apply modifiers.
         for modifierName in selectedModifiers:
             bpy.ops.object.modifier_apply(modifier=modifierName)
-        if vertCount == -1:
-            vertCount = len(o.data.vertices)
-        if vertCount != len(o.data.vertices):
-            differentVertCount = True
-        o.select_set(False)
+        
+        # Verify number of vertices.
+        if vertCount != len(tmpObject.data.vertices):
+            errorInfo = ("Shape keys ended up with different number of vertices!\n"
+                         "All shape keys needs to have the same number of vertices after modifier is applied.\n"
+                         "Otherwise joining such shape keys will fail!")
+            return (False, errorInfo)
     
-    # Handle base shape in "originalObject"
-    context.view_layer.objects.active = originalObject
-    bpy.ops.object.shape_key_remove(all=True)
-    for modifierName in selectedModifiers:
-        bpy.ops.object.modifier_apply(modifier=modifierName)
-    if vertCount == -1:
-        vertCount = len(o.data.vertices)
-    if vertCount != len(o.data.vertices):
-        differentVertCount = True
-    
-    #list.append(context.view_layer.objects.active)
-    #for i in range(1, len(list_shapes)):
-    #    bpy.ops.object.duplicate_move(OBJECT_OT_duplicate={"linked":False, "mode":'TRANSLATION'}, TRANSFORM_OT_translate={"value":(0, 0, 0), "orient_type":'GLOBAL', "orient_matrix":((1, 0, 0), (0, 1, 0), (0, 0, 1)), "orient_matrix_type":'GLOBAL', "constraint_axis":(False, False, False), "mirror":True, "use_proportional_edit":False, "proportional_edit_falloff":'SMOOTH', "proportional_size":1, "use_proportional_connected":False, "use_proportional_projected":False, "snap":False, "snap_target":'CLOSEST', "snap_point":(0, 0, 0), "snap_align":False, "snap_normal":(0, 0, 0), "gpencil_strokes":False, "cursor_transform":False, "texture_space":False, "remove_on_cancel":False, "release_confirm":False, "use_accurate":False})
-    #    list.append(context.view_layer.objects.active)
-
-    #for i, o in enumerate(list):
-    #    context.view_layer.objects.active = o
-    #    key_b = o.data.shape_keys.key_blocks[i]
-    #    print (o.data.shape_keys.key_blocks[i].name, key_b.name)
-    #    properties_object = {p:None for p in properties}
-    #    properties_object["name"] = key_b.name
-    #    properties_object["mute"] = key_b.mute
-    #    properties_object["interpolation"] = key_b.interpolation
-    #    properties_object["relative_key"] = key_b.relative_key.name
-    #    properties_object["slider_max"] = key_b.slider_max
-    #    properties_object["slider_min"] = key_b.slider_min
-    #    properties_object["value"] = key_b.value
-    #    properties_object["vertex_group"] = key_b.vertex_group
-    #    list_properties.append(properties_object)
-    #
-    #    for j in range(i+1, len(list))[::-1]:
-    #        context.object.active_shape_key_index = j
-    #        bpy.ops.object.shape_key_remove()
-    #    for j in range(0, i):
-    #        context.object.active_shape_key_index = 0
-    #        bpy.ops.object.shape_key_remove()
-    #    # last deleted shape doesn't change object shape
-    #    context.object.active_shape_key_index = 0
-    #    # for some reason, changing to edit mode and return object mode fix problem with mesh change when deleting last shapekey
-    #    bpy.ops.object.editmode_toggle()
-    #    bpy.ops.object.editmode_toggle()
-    #    bpy.ops.object.shape_key_remove()
-    #    # time to apply modifiers
-    #    bpy.ops.object.modifier_apply(modifier=modifierName)
-    #    if vertCount == -1:
-    #        vertCount = len(o.data.vertices)
-    #    if vertCount != len(o.data.vertices):
-    #        differentVertCount = True
-    
-    if differentVertCount:
-        errorInfo = ("Shape keys ended up with different number of vertices!\n"
-                     "All shape keys needs to have the same number of vertices after modifier is applied.\n"
-                     "Otherwise joining such shape keys will fail!")
-        return (False, errorInfo)
-    #        
-    #bpy.ops.object.select_all(action='DESELECT')
-    #context.view_layer.objects.active = list[0]
-    #list[0].select_set(True)
-    
-    #workaround for "this type doesn't support IDProperties" handicap error
-    bpy.ops.object.shape_key_add(from_mix=False)
-    for i in range(1, len(list)):
-        list[i].select_set(True)
+        # Join with originalObject
+        copyObject.select_set(False)
+        context.view_layer.objects.active = originalObject
+        originalObject.select_set(True)
         bpy.ops.object.join_shapes()
-        list[i].select_set(False)
+        originalObject.select_set(False)
+        context.view_layer.objects.active = tmpObject
+        
+        # Remove tmpObject
+        bpy.ops.object.delete(use_global=False)
     
     # Restore shape key properties like name, mute etc.
-    for i in range(0, len(list)):
+    context.view_layer.objects.active = originalObject
+    for i in range(0, shapesCount):
         key_b = context.view_layer.objects.active.data.shape_keys.key_blocks[i]
         key_b.name = list_properties[i]["name"]
         key_b.interpolation = list_properties[i]["interpolation"]
@@ -210,17 +177,19 @@ def applyModifierForObjectWithShapeKeys(context, selectedModifiers, disable_arma
         key_b.vertex_group = list_properties[i]["vertex_group"]
         rel_key = list_properties[i]["relative_key"]
     
-        for j in range(0, len(list)):
+        for j in range(0, shapesCount):
             key_brel = context.view_layer.objects.active.data.shape_keys.key_blocks[j]
             if rel_key == key_brel.name:
                 key_b.relative_key = key_brel
                 break
     
-    bpy.ops.object.select_all(action='DESELECT')
-    for o in list[1:]:
-        o.select_set(True)
-    
+    # Remove copyObject.
+    originalObject.select_set(False)
+    context.view_layer.objects.active = copyObject
+    copyObject.select_set(True)
     bpy.ops.object.delete(use_global=False)
+    
+    # Select originalObject.
     context.view_layer.objects.active = originalObject
     context.view_layer.objects.active.select_set(True)
     
