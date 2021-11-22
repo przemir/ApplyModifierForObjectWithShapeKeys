@@ -38,6 +38,7 @@ bl_info = {
 }
 
 import bpy, math
+import time
 from bpy.utils import register_class
 from bpy.props import *
 
@@ -70,6 +71,7 @@ def applyModifierForObjectWithShapeKeys(context, selectedModifiers, disable_arma
     properties = ["interpolation", "mute", "name", "relative_key", "slider_max", "slider_min", "value", "vertex_group"]
     shapesCount = 0
     vertCount = -1
+    startTime = time.time()
 
     disabled_armature_modifiers = []
     if disable_armatures:
@@ -116,6 +118,7 @@ def applyModifierForObjectWithShapeKeys(context, selectedModifiers, disable_arma
         list_properties.append(properties_object)
 
     # Handle base shape in "originalObject"
+    print("applyModifierForObjectWithShapeKeys: Applying base shape key")
     bpy.ops.object.shape_key_remove(all=True)
     for modifierName in selectedModifiers:
         bpy.ops.object.modifier_apply(modifier=modifierName)
@@ -126,6 +129,10 @@ def applyModifierForObjectWithShapeKeys(context, selectedModifiers, disable_arma
     # Handle other shape-keys: copy object, get right shape-key, apply modifiers and merge with originalObject.
     # We handle one object at time here.
     for i in range(1, shapesCount):
+        currTime = time.time()
+        elapsedTime = currTime - startTime
+
+        print("applyModifierForObjectWithShapeKeys: Applying shape key %d/%d ('%s', %0.2f seconds since start)" % (i+1, shapesCount, list_properties[i]["name"], elapsedTime))
         context.view_layer.objects.active = copyObject
         copyObject.select_set(True)
         
