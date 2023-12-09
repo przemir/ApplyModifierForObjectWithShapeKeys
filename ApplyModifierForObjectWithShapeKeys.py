@@ -175,7 +175,11 @@ def applyModifierForObjectWithShapeKeys(context, selectedModifiers, disable_arma
     context.view_layer.objects.active = originalObject
     for i in range(0, shapesCount):
         key_b = context.view_layer.objects.active.data.shape_keys.key_blocks[i]
+        # name needs to be restored before relative_key
         key_b.name = list_properties[i]["name"]
+        
+    for i in range(0, shapesCount):
+        key_b = context.view_layer.objects.active.data.shape_keys.key_blocks[i]
         key_b.interpolation = list_properties[i]["interpolation"]
         key_b.mute = list_properties[i]["mute"]
         key_b.slider_max = list_properties[i]["slider_max"]
