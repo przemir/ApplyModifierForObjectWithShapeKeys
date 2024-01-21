@@ -24,7 +24,3 @@ Note that this solution may not work for modifiers which change the amount of ve
 Algorithm changed!
 Now instead of copying all objects to list, they are handled one by one. There will be maximum 3 copies of objects (including original object) at time.
 It should be less memory consuming for heavier models with many shape keys that way.
-
-## Recent changes
-
-Updated to 2.93
