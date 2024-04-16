@@ -169,7 +169,9 @@ def applyModifierForObjectWithShapeKeys(context, selectedModifiers, disable_arma
         context.view_layer.objects.active = tmpObject
         
         # Remove tmpObject
+        tmpMesh = tmpObject.data
         bpy.ops.object.delete(use_global=False)
+        bpy.data.meshes.remove(tmpMesh)
     
     # Restore shape key properties like name, mute etc.
     context.view_layer.objects.active = originalObject
@@ -198,7 +200,9 @@ def applyModifierForObjectWithShapeKeys(context, selectedModifiers, disable_arma
     originalObject.select_set(False)
     context.view_layer.objects.active = copyObject
     copyObject.select_set(True)
+    tmpMesh = copyObject.data
     bpy.ops.object.delete(use_global=False)
+    bpy.data.meshes.remove(tmpMesh)
     
     # Select originalObject.
     context.view_layer.objects.active = originalObject
