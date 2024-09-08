@@ -72,7 +72,15 @@ def applyModifierForObjectWithShapeKeys(context, selectedModifiers, disable_arma
     shapesCount = 0
     vertCount = -1
     startTime = time.time()
+    
+    # Inspect modifiers for hints used in error message if needed.
+    contains_mirror_with_merge = False
+    for modifier in context.object.modifiers:
+        if modifier.name in selectedModifiers:
+            if modifier.type == 'MIRROR' and modifier.use_mirror_merge == True:
+                contains_mirror_with_merge = True
 
+    # Disable armature modifiers.
     disabled_armature_modifiers = []
     if disable_armatures:
         for modifier in context.object.modifiers:
@@ -80,9 +88,11 @@ def applyModifierForObjectWithShapeKeys(context, selectedModifiers, disable_arma
                 disabled_armature_modifiers.append(modifier)
                 modifier.show_viewport = False
     
+    # Calculate shape keys count.
     if context.object.data.shape_keys:
         shapesCount = len(context.object.data.shape_keys.key_blocks)
     
+    # If there are no shape keys, just apply modifiers.
     if(shapesCount == 0):
         for modifierName in selectedModifiers:
             bpy.ops.object.modifier_apply(modifier=modifierName)
@@ -155,9 +165,15 @@ def applyModifierForObjectWithShapeKeys(context, selectedModifiers, disable_arma
         
         # Verify number of vertices.
         if vertCount != len(tmpObject.data.vertices):
+        
+            errorInfoHint = ""
+            if contains_mirror_with_merge == True:
+                errorInfoHint = "There is mirror modifier with 'Merge' property enabled. This may cause a problem."
+            if errorInfoHint:
+                errorInfoHint = "\n\nHint: " + errorInfoHint
             errorInfo = ("Shape keys ended up with different number of vertices!\n"
                          "All shape keys needs to have the same number of vertices after modifier is applied.\n"
-                         "Otherwise joining such shape keys will fail!")
+                         "Otherwise joining such shape keys will fail!%s" % errorInfoHint)
             return (False, errorInfo)
     
         # Join with originalObject
